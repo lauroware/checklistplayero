@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checklist de Playa</title>
+
+<style>
+
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 20px;
+
+  background-image: url("https://dynamic-media-cdn.tripadvisor.com/media/photo-o/16/9d/24/9a/pipa.jpg?w=700&h=-1&s=1");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.card {
+  max-width: 760px;
+  margin: auto;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+  border-radius: 16px;
+  padding: 16px;
+}
+h1 { margin-top: 0; }
+
+section { margin-bottom: 20px; }
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.done {
+  opacity: .6;
+  background: #f2f2f2;
+}
+label { flex: 1; }
+
+small {
+  display: block;
+  color: #666;
+  margin: 6px 0;
+}
+
+/* Resumen */
+#summary {
+  border: 2px dashed #ddd;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 24px;
+  background: #fafafa;
+}
+#summary h3 {
+  margin-top: 0;
+}
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border: 1px solid #eee;
+}
+.summary-item button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+}
+.hidden { display: none; }
+</style>
+</head>
+
+<body>
+<div class="card">
+<h1>☀️ Checklist de Playa</h1>
+
+<!-- RESUMEN -->
+<div id="summary" class="hidden">
+  <h3>🧾 Lo que ya está listo</h3>
+  <div id="summaryList"></div>
+</div>
+
+<div id="app"></div>
+</div>
+
+<script>
+const STORAGE_KEY = "checklist_playa_v3";
+
+const data = [
+  { title: "Esenciales", items: ["Toalla","Malla / bikini","Ojotas","Lentes de sol","Gorra","Manta"] },
+   { title: "Ojetos personales", items: ["Celular","Llaves","Billetera"] },
+  { title: "🧴 Cuidado personal", items: ["Protector solar","Protector labial","Crema hidratante","Alcohol en gel","Repelente"] },
+  { title: "Extras que salvan", items: ["Botella de agua","Snack / fruta","Bolsa ropa mojada","Mate","Auriculares"] }
+];
+
+const app = document.getElementById("app");
+const summaryBox = document.getElementById("summary");
+const summaryList = document.getElementById("summaryList");
+
+const load = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+const save = s => localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+
+function render() {
+  const state = load();
+  app.innerHTML = "";
+  summaryList.innerHTML = "";
+
+  let hasSummary = false;
+
+  data.forEach((sec, si) => {
+    const section = document.createElement("section");
+    section.innerHTML = `<h3>${sec.title}</h3>`;
+
+    const done = document.createElement("div");
+    const pending = document.createElement("div");
+
+    done.innerHTML = "<small>✔ Listo</small>";
+    pending.innerHTML = "<small>⬜ Pendiente</small>";
+
+    sec.items.forEach((text, ii) => {
+      const id = `${si}_${ii}`;
+      const checked = state[id] === true;
+
+      // ITEM NORMAL
+      const item = document.createElement("div");
+      item.className = "item" + (checked ? " done" : "");
+
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = checked;
+
+      cb.onchange = () => {
+        const s = load();
+        s[id] = cb.checked;
+        save(s);
+        render();
+      };
+
+      const label = document.createElement("label");
+      label.textContent = text;
+
+      item.append(cb, label);
+      (checked ? done : pending).appendChild(item);
+
+      // RESUMEN
+      if (checked) {
+        hasSummary = true;
+
+        const sumItem = document.createElement("div");
+        sumItem.className = "summary-item";
+
+        const txt = document.createElement("span");
+        txt.textContent = text;
+
+        const btn = document.createElement("button");
+        btn.textContent = "❌";
+        btn.title = "Quitar del resumen";
+        btn.onclick = () => {
+          const s = load();
+          s[id] = false;
+          save(s);
+          render();
+        };
+
+        sumItem.append(txt, btn);
+        summaryList.appendChild(sumItem);
+      }
+    });
+
+    section.append(done, pending);
+    app.appendChild(section);
+  });
+
+  summaryBox.classList.toggle("hidden", !hasSummary);
+}
+
+render();
+</script>
+</body>
+</html>
